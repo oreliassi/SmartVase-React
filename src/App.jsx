@@ -1,12 +1,13 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { CartProvider } from "./contexts/CartContext";
-import LoginScreen from "./components/LoginScreen";
-import HomeScreen from "./components/HomeScreen";
-import DesignScreen from "./components/DesignScreen";
-import CheckoutScreen from "./components/CheckoutScreen";
-import PersonalArea from "./components/PersonalArea";
-import ErrorBoundary from "./components/ErrorBoundary";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { CartProvider } from './contexts/CartContext';
+import LoginScreen from './components/LoginScreen';
+import HomeScreen from './components/HomeScreen';
+import DesignScreen from './components/DesignScreen';
+import CheckoutScreen from './components/CheckoutScreen';
+import PersonalArea from './components/PersonalArea';
+import ErrorBoundary from './components/ErrorBoundary';
+import './index.css';
 
 // Auth guard component to protect routes
 const ProtectedRoute = ({ children }) => {

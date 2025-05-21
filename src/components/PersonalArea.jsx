@@ -149,6 +149,67 @@ const PersonalArea = () => {
     }
   };
 
+  // Component for colored vase image
+  const ColoredVaseImage = ({ model, color }) => {
+    // Determine the image path
+    const imgPath = `/images/${model.replace('.stl', '')}.png`;
+    
+    return (
+      <div 
+        style={{
+          position: 'relative',
+          width: '80px',
+          height: '80px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
+        {/* Base image with color tint applied directly to the image */}
+        <img 
+          src={imgPath} 
+          alt="דגם כד" 
+          style={{
+            width: '100%',
+            height: 'auto',
+            filter: `drop-shadow(0px 2px 3px rgba(0,0,0,0.2))`,
+            // Apply a color filter to the image instead of background
+            filter: `brightness(0.9) sepia(1) hue-rotate(${getHueRotation(color)}) saturate(${getSaturation(color)})`,
+          }}
+        />
+      </div>
+    );
+  };
+  
+  // Helper function to convert hex color to hue rotation value
+  const getHueRotation = (hexColor) => {
+    // Maps common colors to approximate hue rotation values
+    const hueMap = {
+      "#f14a4a": "0deg",     // Red: no rotation
+      "#99db99": "100deg",   // Green: ~100 degrees
+      "#7878f1": "240deg",   // Blue: ~240 degrees
+      "#ffeb94": "60deg",    // Yellow: ~60 degrees
+      "#dd8add": "300deg",   // Pink: ~300 degrees
+      "#99dada": "180deg",   // Turquoise: ~180 degrees
+      "#aaaaaa": "0deg",     // Gray: no hue (with saturation 0)
+      "#e7d5d5": "0deg",     // White: no hue (with brightness high)
+      "#000000": "0deg",     // Black: no hue (with brightness low)
+      "#ffa500": "35deg"     // Orange: ~35 degrees
+    };
+    
+    return hueMap[hexColor] || "0deg";
+  };
+  
+  // Helper function to get saturation based on color
+  const getSaturation = (hexColor) => {
+    // Special cases for grayscale colors
+    if (hexColor === "#aaaaaa") return "0%";  // Gray
+    if (hexColor === "#e7d5d5") return "10%"; // White
+    if (hexColor === "#000000") return "0%";  // Black
+    
+    return "80%"; // Default saturation for colored vases
+  };
+
   return (
     <div className="container" id="personal-area">
       <div id="floating-buttons">
@@ -221,11 +282,8 @@ const PersonalArea = () => {
                     <h4>פריט {index + 1}</h4>
                     <div className="item-content">
                       <div className="model-image">
-                        <img 
-                          src={`/images/${model.model_number.replace('.stl', '')}.png`} 
-                          alt={`דגם ${index + 1}`}
-                          style={{ backgroundColor: model.color, mixBlendMode: 'multiply' }}
-                        />
+                        {/* Use the new ColoredVaseImage component */}
+                        <ColoredVaseImage model={model.model_number} color={model.color} />
                       </div>
                       <div className="item-details">
                         <p><strong>גובה:</strong> {model.height} ס"מ</p>

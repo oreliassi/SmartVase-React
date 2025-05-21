@@ -63,6 +63,7 @@ export const CartProvider = ({ children }) => {
     setCartItems(updatedCart);
     setCartCount(updatedCart.length);
     calculateTotal(updatedCart);
+    setShowCart(true); // Show cart when item is added
     return newItem;
   };
 

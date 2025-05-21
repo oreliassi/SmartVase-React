@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import "../index.css";
@@ -6,6 +6,7 @@ import "../index.css";
 const CheckoutScreen = () => {
   const { cartItems, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
+  const paypalButtonRef = useRef(null);
   
   const [orderForm, setOrderForm] = useState({
     first_name: "",
@@ -22,6 +23,7 @@ const CheckoutScreen = () => {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [finalTotal, setFinalTotal] = useState(0);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
   
   // Shipping price mapping using useMemo to prevent recreating on each render
   const shippingPrices = useMemo(() => ({
@@ -65,6 +67,88 @@ const CheckoutScreen = () => {
     
     fillOrderFormFromSession();
   }, []);
+  
+  // Check if PayPal SDK is loaded
+  useEffect(() => {
+    const checkPayPalSDK = () => {
+      if (window.paypal) {
+        setPaypalLoaded(true);
+      } else {
+        console.log("PayPal SDK not loaded yet, trying again in 1s");
+        setTimeout(checkPayPalSDK, 1000);
+      }
+    };
+    
+    checkPayPalSDK();
+  }, []);
+  
+  // Initialize PayPal buttons when payment options are shown
+  useEffect(() => {
+    if (showPaymentOptions && paypalLoaded && window.paypal) {
+      // Clear any existing buttons
+      if (paypalButtonRef.current) {
+        paypalButtonRef.current.innerHTML = '';
+      }
+
+      try {
+        window.paypal.Buttons({
+          // Set up the transaction
+          createOrder: function(data, actions) {
+            return actions.order.create({
+              purchase_units: [{
+                amount: {
+                  value: finalTotal.toFixed(2),
+                  currency_code: 'ILS'
+                },
+                description: `הזמנה מ-SmartVase`,
+              }]
+            });
+          },
+          
+          // Finalize the transaction
+          onApprove: function(data, actions) {
+            // Set processing state
+            setIsProcessing(true);
+            
+            return actions.order.capture().then(function(orderData) {
+              // Show success message
+              const successMessage = document.createElement('div');
+              successMessage.className = 'order-success';
+              successMessage.innerHTML = '<i class="fas fa-check-circle"></i> תודה, ההזמנה בוצעה בהצלחה!';
+              document.querySelector('#checkout-screen').prepend(successMessage);
+              
+              // Clear cart
+              clearCart();
+              
+              // Redirect after 3 seconds
+              setTimeout(() => {
+                navigate('/design');
+              }, 3000);
+            });
+          },
+          
+          // Handle errors
+          onError: function(err) {
+            console.error('PayPal Error:', err);
+            setIsProcessing(false);
+            alert('אירעה שגיאה בעת התשלום. אנא נסה שנית.');
+          },
+          
+          // Style the button
+          style: {
+            layout: 'vertical',
+            color: 'blue',
+            shape: 'rect',
+            label: 'paypal'
+          }
+        }).render(paypalButtonRef.current);
+        
+        console.log("PayPal buttons rendered successfully");
+      } catch (error) {
+        console.error("Error rendering PayPal buttons:", error);
+      }
+    }
+  }, [showPaymentOptions, finalTotal, clearCart, navigate, paypalLoaded]);
 
   // Update form field
   const handleInputChange = (e) => {
@@ -95,32 +179,8 @@ const CheckoutScreen = () => {
       apartment: orderForm.apartment
     }));
 
-    // Show payment options (PayPal would be integrated here in real app)
+    // Show payment options
     setShowPaymentOptions(true);
-  };
-
-  // Process payment
-  const processPayment = () => {
-    setIsProcessing(true);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      
-      // Show success message
-      const successMessage = document.createElement('div');
-      successMessage.className = 'order-success';
-      successMessage.innerHTML = '<i class="fas fa-check-circle"></i> תודה, ההזמנה בוצעה בהצלחה!';
-      document.querySelector('#checkout-screen').prepend(successMessage);
-      
-      // Clear cart
-      clearCart();
-      
-      // Redirect after 3 seconds
-      setTimeout(() => {
-        navigate('/design');
-      }, 3000);
-    }, 2000);
   };
 
   // Back to design screen
@@ -228,30 +288,30 @@ const CheckoutScreen = () => {
         </form>
       ) : (
         <div id="payment-container">
-          <h3>בחר אמצעי תשלום</h3>
+          <h3>תשלום באמצעות PayPal</h3>
           
           <div id="payment-methods">
-            <div className="payment-method">
-              <button 
-                onClick={processPayment}
-                disabled={isProcessing}
-                className="payment-button"
-              >
-                {isProcessing ? 'מעבד תשלום...' : 'שלם באשראי'}
-              </button>
-            </div>
-            
-            <div className="payment-method">
-              <div id="paypal-button-container">
-                <button 
-                  onClick={processPayment}
-                  disabled={isProcessing}
-                  className="payment-button paypal"
-                >
-                  {isProcessing ? 'מעבד תשלום...' : 'PayPal'}
-                </button>
+            {!paypalLoaded ? (
+              <div className="loading-paypal">
+                <div className="spinner"></div>
+                <p>טוען אפשרויות תשלום...</p>
               </div>
-            </div>
+            ) : (
+              <div className="payment-method paypal-method">
+                <div 
+                  id="paypal-button-container" 
+                  ref={paypalButtonRef}
+                  style={{ 
+                    width: '100%', 
+                    maxWidth: '500px', 
+                    margin: '0 auto',
+                    minHeight: '150px'
+                  }}
+                >
+                  {/* PayPal button will be rendered here */}
+                </div>
+              </div>
+            )}
           </div>
           
           <p id="final-total" style={{ fontWeight: "bold", fontSize: "18px", marginTop: "20px" }}>

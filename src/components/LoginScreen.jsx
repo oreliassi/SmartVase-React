@@ -89,14 +89,6 @@ const LoginScreen = () => {
       >
         {isLoading ? 'מתחבר...' : 'התחבר'}
       </button>
-      
-      <button 
-        id="admin-login"
-        onClick={() => navigate('/admin')}
-        disabled={isLoading}
-      >
-        התחברות כמנהל
-      </button>
     </div>
   );
 };
